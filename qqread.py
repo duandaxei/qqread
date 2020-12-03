@@ -2,6 +2,7 @@
 
 import os
 import re
+import ast
 import time
 import random
 import requests
@@ -18,14 +19,14 @@ NOTIFYTYPE = 3  # 0为关闭通知，1为所有通知，2为领取宝箱成功�
 # 以上为可修改参数
 
 if "NOTIFYTYPE" in os.environ and os.environ["NOTIFYTYPE"].strip():
-    NOTIFYTYPE = eval(os.environ["NOTIFYTYPE"])
+    NOTIFYTYPE = ast.literal_eval(os.environ["NOTIFYTYPE"])
 
 
 def getTemplate(headers, functionId):
     """请求模板"""
     functionURL = f"https://mqqapi.reader.qq.com/mqq/{functionId}"
     delay()
-    data = requests.get(functionURL, headers=eval(headers)).json()
+    data = requests.get(functionURL, headers=ast.literal_eval(headers)).json()
     return data
 
 
@@ -52,7 +53,7 @@ def qqreadticket(headers):
     qqreadticketurl = "https://mqqapi.reader.qq.com/mqq/sign_in/user"
     delay()
     ticket_data = requests.post(
-        qqreadticketurl, headers=eval(headers)).json()['data']
+        qqreadticketurl, headers=ast.literal_eval(headers)).json()['data']
     return ticket_data
 
 
@@ -128,13 +129,13 @@ def qqreadaddtime(headers, addtimeurl):
     """上传阅读时长"""
     sectime = random.randint(TIME*60*1000, (TIME+1)*60*1000)
     findtime = re.compile(r'readTime=(.*?)&')
-    findtime1 = re.compile(r'readTime%22%3A(.*?)%2C')
+    #findtime1 = re.compile(r'readTime%22%3A(.*?)%2C')
     url = re.sub(findtime.findall(addtimeurl)[
                  0], str(sectime), str(addtimeurl))
-    url = re.sub(findtime1.findall(addtimeurl)[
-                 0], str(sectime), str(addtimeurl))
+    #url = re.sub(findtime1.findall(addtimeurl)[
+    #             0], str(sectime), str(addtimeurl))
     delay()
-    addtime_data = requests.get(url, headers=eval(headers)).json()
+    addtime_data = requests.get(url, headers=ast.literal_eval(headers)).json()
     return addtime_data
 
 
@@ -160,8 +161,6 @@ def delay():
 def sendmsg(content: str):
     """发送通知"""
     notification.notify("企鹅读书通知", content)
-    print("已成功发送通知！")
-
 
 def main():
     for index, secrets in enumerate(qqreadCookie.get_cookies()):
@@ -174,8 +173,8 @@ def main():
         task_data = qqreadtask(secrets[0])
         mytask_data = qqreadmytask(secrets[0])
 
-        tz += f"========== {gettime()} =========\n"
-        tz += f"============= 📣系统通知📣 =============\n"
+        tz += f"=== {gettime()} ===\n"
+        tz += f"=== 📣系统通知📣 ===\n"
         tz += f"【用户信息】{info_data['user']['nickName']}\n"
         tz += f"【账户余额】{task_data['user']['amount']}金币\n"
         tz += f"【今日阅读】{todaytime_data}分钟\n"
@@ -214,7 +213,7 @@ def main():
                     tz += f"【视频奖励】获得{video_data['data']['amount']}金币\n"
 
             if task_data['taskList'][i]['title'].find("阅读任务") != -1 and task_data['taskList'][i]['doneFlag'] == 0:
-                if todaytime_data >= 1 and todaytime_data < 5:
+                if todaytime_data >= 1 and todaytime_data < 15:
                     todaygift_data = qqreadtodaygift(secrets[0], 30)
                     if todaygift_data['amount'] > 0:
                         tz += f"【阅读金币1】获得{todaygift_data['amount']}金币\n"
